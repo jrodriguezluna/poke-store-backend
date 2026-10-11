@@ -17,9 +17,12 @@ class ProductoOut(BaseModel):
 class RegistroIn(BaseModel):
     nombre: str = Field(min_length=1, max_length=100)
     email: EmailStr
+    telefono: str | None = Field(default=None, max_length=20)
+    direccion: str = Field(min_length=5, max_length=200)
+    region: str = Field(min_length=1, max_length=100)
+    comuna: str = Field(min_length=1, max_length=100)
     # bcrypt solo procesa los primeros 72 bytes; se limita para evitar errores
     password: str = Field(min_length=6, max_length=64)
-
 
 class LoginIn(BaseModel):
     email: EmailStr
@@ -31,6 +34,10 @@ class UsuarioOut(BaseModel):
     id: int
     nombre: str
     email: str
+    telefono: str | None = None
+    direccion: str
+    region: str
+    comuna: str
     rol: str
 
 

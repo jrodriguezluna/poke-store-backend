@@ -12,6 +12,10 @@ class Usuario(Base):
     nombre: Mapped[str] = mapped_column(String(100))
     email: Mapped[str] = mapped_column(String(120), unique=True)
     password_hash: Mapped[str] = mapped_column(String(255))
+    telefono: Mapped[str | None] = mapped_column(String(20), default=None)
+    direccion: Mapped[str] = mapped_column(String(200))
+    region: Mapped[str] = mapped_column(String(100))
+    comuna: Mapped[str] = mapped_column(String(100))
     rol: Mapped[str] = mapped_column(String(20), default="cliente")
     creado_en: Mapped[datetime] = mapped_column(server_default=func.now())
 

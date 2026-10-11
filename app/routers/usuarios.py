@@ -19,6 +19,10 @@ def registro(datos: RegistroIn, db: Session = Depends(get_db)):
     usuario = Usuario(
         nombre=datos.nombre.strip(),
         email=email,
+        telefono=(datos.telefono or "").strip() or None,
+        direccion=datos.direccion.strip(),
+        region=datos.region,
+        comuna=datos.comuna,
         password_hash=hash_password(datos.password),
         rol="cliente",  # el rol nunca viene del cliente
     )
@@ -39,4 +43,3 @@ def login(datos: LoginIn, db: Session = Depends(get_db)):
     if not usuario or not verify_password(datos.password, usuario.password_hash):
         raise HTTPException(401, "Credenciales inválidas")
     return usuario
-
