@@ -1,0 +1,70 @@
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+
+class ProductoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    nombre: str
+    tipo: str | None
+    precio: int
+    imagen: str | None
+    descripcion: str | None
+    stock: int
+
+
+class RegistroIn(BaseModel):
+    nombre: str = Field(min_length=1, max_length=100)
+    email: EmailStr
+    # bcrypt solo procesa los primeros 72 bytes; se limita para evitar errores
+    password: str = Field(min_length=6, max_length=64)
+
+
+class LoginIn(BaseModel):
+    email: EmailStr
+    password: str = Field(max_length=64)
+
+
+class UsuarioOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    nombre: str
+    email: str
+    rol: str
+
+
+class ItemIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    producto_id: int = Field(alias="productoId")
+    cantidad: int = Field(ge=1)
+
+
+class PedidoIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    usuario_id: int = Field(alias="usuarioId")
+    items: list[ItemIn] = Field(min_length=1)
+
+
+class PedidoOut(BaseModel):
+    id: int
+    total: int
+
+
+class ItemHistorialOut(BaseModel):
+    nombre: str
+    cantidad: int
+    precioUnit: int
+
+
+class PedidoHistorialOut(BaseModel):
+    id: int
+    total: int
+    fecha: datetime
+    items: list[ItemHistorialOut]
+
+
+class ContactoIn(BaseModel):
+    nombre: str = Field(min_length=1, max_length=100)
+    email: EmailStr
+    mensaje: str = Field(min_length=1, max_length=2000)
