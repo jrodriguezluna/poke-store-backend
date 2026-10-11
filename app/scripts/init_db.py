@@ -1,5 +1,5 @@
 """Recrea TODAS las tablas (borra los datos) y carga el seed.
-Uso (desde server/):  python -m app.scripts.init_db
+Uso:  python -m app.scripts.init_db
 """
 from app import models  # noqa: F401  (registra los modelos en Base.metadata)
 from app.database import Base, SessionLocal, engine
