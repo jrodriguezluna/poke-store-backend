@@ -14,6 +14,16 @@ class ProductoOut(BaseModel):
     descripcion: str | None
     stock: int
 
+class ProductoIn(BaseModel):
+    nombre: str = Field(min_length=1, max_length=100)
+    tipo: str | None = Field(default=None, max_length=30)
+    categoria: str | None = Field(default=None, max_length=50)
+    precio: int = Field(ge=0)
+    stock: int = Field(default=0, ge=0)
+    imagen: str | None = Field(default=None, max_length=255)
+    descripcion: str | None = None
+
+
 class RegistroIn(BaseModel):
     nombre: str = Field(min_length=1, max_length=100)
     email: EmailStr
