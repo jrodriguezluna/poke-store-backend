@@ -41,6 +41,9 @@ def main() -> None:
                 nombre="Administrador",
                 email="admin@pokestore.cl",
                 password_hash=hash_password("admin123"),  # solo para la demo: cambiar si se publica
+                direccion="Sin dirección",
+                region="Metropolitana",
+                comuna="Santiago",
                 rol="admin",
             )
         )
