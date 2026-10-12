@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import Usuario
-from ..schemas import LoginIn, RegistroIn, UsuarioOut
+from ..schemas import LoginIn, RegistroIn, UsuarioOut, UsuarioUpdate
 from ..security import hash_password, verify_password
 
 router = APIRouter(prefix="/api", tags=["usuarios"])
@@ -43,3 +43,47 @@ def login(datos: LoginIn, db: Session = Depends(get_db)):
     if not usuario or not verify_password(datos.password, usuario.password_hash):
         raise HTTPException(401, "Credenciales inválidas")
     return usuario
+
+
+@router.get("/usuarios", response_model=list[UsuarioOut])
+def listar(db: Session = Depends(get_db)):
+    return db.scalars(select(Usuario).order_by(Usuario.id)).all()
+
+
+@router.put("/usuarios/{usuario_id}", response_model=UsuarioOut)
+def modificar(usuario_id: int, datos: UsuarioUpdate, db: Session = Depends(get_db)):
+    usuario = db.get(Usuario, usuario_id)
+    if not usuario:
+        raise HTTPException(404, "Usuario no encontrado")
+
+    usuario.nombre = datos.nombre.strip()
+    usuario.email = datos.email.lower()
+    usuario.telefono = (datos.telefono or "").strip() or None
+    usuario.direccion = datos.direccion.strip()
+    usuario.region = datos.region
+    usuario.comuna = datos.comuna
+    usuario.rol = datos.rol
+    if datos.password:
+        usuario.password_hash = hash_password(datos.password)
+
+    try:
+        db.commit()
+    except IntegrityError:  # email repetido
+        db.rollback()
+        raise HTTPException(409, "El correo ya está registrado")
+    db.refresh(usuario)
+    return usuario
+
+
+@router.delete("/usuarios/{usuario_id}", status_code=204)
+def eliminar(usuario_id: int, db: Session = Depends(get_db)):
+    usuario = db.get(Usuario, usuario_id)
+    if not usuario:
+        raise HTTPException(404, "Usuario no encontrado")
+    try:
+        db.delete(usuario)
+        db.commit()
+    except IntegrityError:  # tiene pedidos asociados
+        db.rollback()
+        raise HTTPException(409, "No se puede eliminar: el usuario tiene pedidos")
+    return Response(status_code=204)

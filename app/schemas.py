@@ -85,3 +85,13 @@ class ContactoIn(BaseModel):
     nombre: str = Field(min_length=1, max_length=100)
     email: EmailStr
     mensaje: str = Field(min_length=1, max_length=2000)
+
+class UsuarioUpdate(BaseModel):
+    nombre: str = Field(min_length=1, max_length=100)
+    email: EmailStr
+    telefono: str | None = Field(default=None, max_length=20)
+    direccion: str = Field(min_length=5, max_length=200)
+    region: str = Field(min_length=1, max_length=100)
+    comuna: str = Field(min_length=1, max_length=100)
+    rol: str = "cliente"
+    password: str | None = Field(default=None, min_length=6, max_length=64)
