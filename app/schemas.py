@@ -16,7 +16,6 @@ class ProductoOut(BaseModel):
 
 class ProductoIn(BaseModel):
     nombre: str = Field(min_length=1, max_length=100)
-    tipo: str | None = Field(default=None, max_length=30)
     categoria: str | None = Field(default=None, max_length=50)
     precio: int = Field(ge=0)
     stock: int = Field(default=0, ge=0)

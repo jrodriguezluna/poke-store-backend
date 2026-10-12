@@ -43,7 +43,6 @@ def obtener(producto_id: int, db: Session = Depends(get_db)):
 def crear(datos: ProductoIn, db: Session = Depends(get_db)):
     p = Producto(
         nombre=datos.nombre.strip(),
-        tipo=datos.tipo,
         categoria=datos.categoria,
         precio=datos.precio,
         descripcion=datos.descripcion,
@@ -67,7 +66,7 @@ def actualizar(producto_id: int, datos: ProductoIn, db: Session = Depends(get_db
         borrar_imagen_local(p.imagen)
         p.imagen = imagen
 
-    p.nombre, p.tipo, p.categoria, p.precio = datos.nombre.strip(), datos.tipo, datos.categoria, datos.precio
+    p.nombre, p.categoria, p.precio = datos.nombre.strip(), datos.categoria, datos.precio
     p.descripcion, p.stock = datos.descripcion, datos.stock
     db.commit()
     db.refresh(p)
