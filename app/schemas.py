@@ -7,11 +7,21 @@ class ProductoOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     nombre: str
-    tipo: str | None
+    tipo: str | None           # nombre interno en la BD
+    categoria: str | None = None  # alias de tipo; el frontend filtra por este campo
     precio: int
     imagen: str | None
     descripcion: str | None
     stock: int
+
+    @classmethod
+    def model_validate(cls, obj, **kwargs):
+        # Cuando SQLAlchemy nos pasa un ORM Producto,
+        # copiamos tipo → categoria para que el frontend lo reciba con el nombre esperado
+        instance = super().model_validate(obj, **kwargs)
+        if instance.categoria is None:
+            instance.categoria = instance.tipo
+        return instance
 
 
 class RegistroIn(BaseModel):

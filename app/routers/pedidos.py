@@ -19,26 +19,41 @@ def crear(datos: PedidoIn, db: Session = Depends(get_db)):
     for item in datos.items:
         cantidades[item.producto_id] = cantidades.get(item.producto_id, 0) + item.cantidad
 
-    productos = db.scalars(
+    productos_map: dict[int, Producto] = {p.id: p for p in db.scalars(
         select(Producto).where(Producto.id.in_(list(cantidades)), Producto.activo.is_(True))
-    ).all()
-    precios = {p.id: p.precio for p in productos}
+    ).all()}
 
-    faltantes = sorted(set(cantidades) - set(precios))
+    # Verificar que todos los productos solicitados existan
+    faltantes = sorted(set(cantidades) - set(productos_map))
     if faltantes:
         raise HTTPException(400, f"Productos no disponibles: {faltantes}")
 
-    total = sum(precios[pid] * cant for pid, cant in cantidades.items())  # total calculado en el servidor
+    # Verificar stock suficiente para cada producto antes de comprometer nada
+    sin_stock = [
+        productos_map[pid].nombre
+        for pid, cant in cantidades.items()
+        if productos_map[pid].stock < cant
+    ]
+    if sin_stock:
+        raise HTTPException(400, f"Stock insuficiente para: {', '.join(sin_stock)}")
+
+    # Descontar stock y calcular total (todo dentro de la misma transacción)
+    total = 0
+    for pid, cant in cantidades.items():
+        p = productos_map[pid]
+        p.stock -= cant
+        total += p.precio * cant
+
     pedido = Pedido(
         usuario_id=datos.usuario_id,
         total=total,
         items=[
-            PedidoItem(producto_id=pid, cantidad=cant, precio_unit=precios[pid])
+            PedidoItem(producto_id=pid, cantidad=cant, precio_unit=productos_map[pid].precio)
             for pid, cant in cantidades.items()
         ],
     )
     db.add(pedido)
-    db.commit()  # pedido e ítems se guardan en una sola transacción: o todo o nada
+    db.commit()  # pedido, ítems y descuento de stock se guardan en una sola transacción: o todo o nada
     return {"id": pedido.id, "total": total}
 
 
