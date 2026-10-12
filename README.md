@@ -68,13 +68,27 @@ CORS_ORIGINS=http://localhost:5173
 
 ## 4. Inicialización de la base de datos
 
-Para crear las tablas del modelo relacional e insertar los datos iniciales (catálogo de 8 productos y usuario administrador):
+### Base de datos nueva
+
+Para crear las tablas e insertar los datos iniciales en una base de datos vacía:
 
 ```bash
 python -m app.scripts.init_db
 ```
 
-> **Importante:** Ejecutar siempre este comando desde la **raíz del proyecto** utilizando el parámetro `-m`. Ejecutar `python3 init_db.py` directamente desde la subcarpeta `app/scripts/` generará un error de importación (`ModuleNotFoundError: No module named 'app'`) y no cargará el archivo `.env`.
+> **Advertencia:** `init_db` elimina y recrea todas las tablas. No lo ejecutes sobre una base de datos con información que quieras conservar.
+
+### Base de datos existente
+
+Para agregar columnas que falten sin borrar usuarios, productos ni pedidos:
+
+```bash
+python -m app.scripts.migrate_schema
+```
+
+Ejecuta esta migración antes de iniciar el backend cuando actualices el código.
+
+> **Importante:** Ejecuta el comando correspondiente desde la **raíz del proyecto** utilizando el parámetro `-m`. Ejecutar un script directamente desde `app/scripts/` puede generar `ModuleNotFoundError: No module named 'app'` y no cargar el archivo `.env`.
 
 ### Usuario administrador generado por defecto:
 - **Email:** `admin@pokestore.cl`

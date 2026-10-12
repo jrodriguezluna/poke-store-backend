@@ -63,6 +63,7 @@ def crear(
     nombre: str = Form(..., min_length=1, max_length=100),
     precio: int = Form(..., ge=0),
     tipo: str | None = Form(None),
+    categoria: str | None = Form(None),
     descripcion: str | None = Form(None),
     stock: int = Form(0, ge=0),
     imagen_url: str | None = Form(None),
@@ -72,6 +73,7 @@ def crear(
     p = Producto(
         nombre=nombre.strip(),
         tipo=tipo,
+        categoria=categoria,
         precio=precio,
         descripcion=descripcion,
         stock=stock,
@@ -89,6 +91,7 @@ def actualizar(
     nombre: str = Form(..., min_length=1, max_length=100),
     precio: int = Form(..., ge=0),
     tipo: str | None = Form(None),
+    categoria: str | None = Form(None),
     descripcion: str | None = Form(None),
     stock: int = Form(0, ge=0),
     imagen_url: str | None = Form(None),
@@ -104,7 +107,7 @@ def actualizar(
         borrar_imagen_local(p.imagen)            # ...y recién después se borra la anterior
         p.imagen = nueva
 
-    p.nombre, p.tipo, p.precio = nombre.strip(), tipo, precio
+    p.nombre, p.tipo, p.categoria, p.precio = nombre.strip(), tipo, categoria, precio
     p.descripcion, p.stock = descripcion, stock
     db.commit()
     db.refresh(p)
