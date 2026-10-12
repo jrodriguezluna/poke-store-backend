@@ -8,20 +8,19 @@ class ProductoOut(BaseModel):
     id: int
     nombre: str
     tipo: str | None           # nombre interno en la BD
-    categoria: str | None = None  # alias de tipo; el frontend filtra por este campo
+    categoria: str | None = None
     precio: int
     imagen: str | None
     descripcion: str | None
     stock: int
 
-    @classmethod
-    def model_validate(cls, obj, **kwargs):
-        # Cuando SQLAlchemy nos pasa un ORM Producto,
-        # copiamos tipo → categoria para que el frontend lo reciba con el nombre esperado
-        instance = super().model_validate(obj, **kwargs)
-        if instance.categoria is None:
-            instance.categoria = instance.tipo
-        return instance
+class ProductoIn(BaseModel):
+    nombre: str = Field(min_length=1, max_length=100)
+    categoria: str | None = Field(default=None, max_length=50)
+    precio: int = Field(ge=0)
+    stock: int = Field(default=0, ge=0)
+    imagen: str | None = Field(default=None, max_length=255)
+    descripcion: str | None = None
 
 
 class RegistroIn(BaseModel):

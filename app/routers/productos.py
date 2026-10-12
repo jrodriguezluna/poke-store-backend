@@ -1,31 +1,15 @@
-import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..config import settings
 from ..database import get_db
 from ..models import Producto
-from ..schemas import ProductoOut
+from ..schemas import ProductoIn, ProductoOut
 
 router = APIRouter(prefix="/api/productos", tags=["productos"])
-
-EXTENSIONES = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp"}
-
-
-def guardar_imagen(archivo: UploadFile) -> str:
-    # La extensión sale del tipo MIME validado, nunca del nombre que manda el cliente
-    ext = EXTENSIONES.get(archivo.content_type)
-    if not ext:
-        raise HTTPException(400, "Formato de imagen no permitido (usa PNG, JPG o WEBP)")
-    contenido = archivo.file.read(settings.max_upload_bytes + 1)
-    if len(contenido) > settings.max_upload_bytes:
-        raise HTTPException(400, "La imagen supera el máximo de 2 MB")
-    nombre = f"{uuid.uuid4().hex}{ext}"
-    (Path(settings.upload_dir) / nombre).write_bytes(contenido)
-    return f"/uploads/{nombre}"
 
 
 def borrar_imagen_local(ruta: str | None) -> None:
@@ -34,14 +18,11 @@ def borrar_imagen_local(ruta: str | None) -> None:
         (Path(settings.upload_dir) / Path(ruta).name).unlink(missing_ok=True)
 
 
-def resolver_imagen(archivo: UploadFile | None, url: str | None) -> str | None:
-    if archivo is not None and archivo.filename:
-        return guardar_imagen(archivo)
-    if url:
-        if not url.startswith(("http://", "https://")):
-            raise HTTPException(400, "La URL de la imagen debe comenzar con http:// o https://")
-        return url
-    return None
+def validar_imagen(url: str | None) -> str | None:
+    url = (url or "").strip() or None
+    if url and not url.startswith(("http://", "https://")):
+        raise HTTPException(400, "La URL de la imagen debe comenzar con http:// o https://")
+    return url
 
 
 @router.get("", response_model=list[ProductoOut])
@@ -59,23 +40,14 @@ def obtener(producto_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("", response_model=ProductoOut, status_code=201)
-def crear(
-    nombre: str = Form(..., min_length=1, max_length=100),
-    precio: int = Form(..., ge=0),
-    tipo: str | None = Form(None),
-    descripcion: str | None = Form(None),
-    stock: int = Form(0, ge=0),
-    imagen_url: str | None = Form(None),
-    imagen: UploadFile | None = File(None),
-    db: Session = Depends(get_db),
-):
+def crear(datos: ProductoIn, db: Session = Depends(get_db)):
     p = Producto(
-        nombre=nombre.strip(),
-        tipo=tipo,
-        precio=precio,
-        descripcion=descripcion,
-        stock=stock,
-        imagen=resolver_imagen(imagen, imagen_url),
+        nombre=datos.nombre.strip(),
+        categoria=datos.categoria,
+        precio=datos.precio,
+        descripcion=datos.descripcion,
+        stock=datos.stock,
+        imagen=validar_imagen(datos.imagen),
     )
     db.add(p)
     db.commit()
@@ -84,28 +56,18 @@ def crear(
 
 
 @router.put("/{producto_id}", response_model=ProductoOut)
-def actualizar(
-    producto_id: int,
-    nombre: str = Form(..., min_length=1, max_length=100),
-    precio: int = Form(..., ge=0),
-    tipo: str | None = Form(None),
-    descripcion: str | None = Form(None),
-    stock: int = Form(0, ge=0),
-    imagen_url: str | None = Form(None),
-    imagen: UploadFile | None = File(None),
-    db: Session = Depends(get_db),
-):
+def actualizar(producto_id: int, datos: ProductoIn, db: Session = Depends(get_db)):
     p = db.get(Producto, producto_id)
     if not p or not p.activo:
         raise HTTPException(404, "Producto no encontrado")
 
-    nueva = resolver_imagen(imagen, imagen_url)  # primero se guarda la nueva...
-    if nueva:
-        borrar_imagen_local(p.imagen)            # ...y recién después se borra la anterior
-        p.imagen = nueva
+    imagen = validar_imagen(datos.imagen)
+    if imagen != p.imagen:
+        borrar_imagen_local(p.imagen)
+        p.imagen = imagen
 
-    p.nombre, p.tipo, p.precio = nombre.strip(), tipo, precio
-    p.descripcion, p.stock = descripcion, stock
+    p.nombre, p.categoria, p.precio = datos.nombre.strip(), datos.categoria, datos.precio
+    p.descripcion, p.stock = datos.descripcion, datos.stock
     db.commit()
     db.refresh(p)
     return p

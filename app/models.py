@@ -25,6 +25,7 @@ class Producto(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     nombre: Mapped[str] = mapped_column(String(100))
     tipo: Mapped[str | None] = mapped_column(String(30), default=None)
+    categoria: Mapped[str | None] = mapped_column(String(50), default=None)
     precio: Mapped[int]
     imagen: Mapped[str | None] = mapped_column(String(255), default=None)
     descripcion: Mapped[str | None] = mapped_column(Text, default=None)
