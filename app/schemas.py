@@ -1,6 +1,8 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
+DOMINIOS_PERMITIDOS = {"gmail.com", "outlook.com", "duoc.cl", "duocuc.cl"}
 
 
 class ProductoOut(BaseModel):
@@ -32,6 +34,14 @@ class RegistroIn(BaseModel):
     comuna: str = Field(min_length=1, max_length=100)
     # bcrypt solo procesa los primeros 72 bytes; se limita para evitar errores
     password: str = Field(min_length=6, max_length=64)
+
+    @field_validator("email")
+    @classmethod
+    def dominio_permitido(cls, v: str) -> str:
+        dominio = v.strip().lower().split("@")[-1]
+        if dominio not in DOMINIOS_PERMITIDOS:
+            raise ValueError("Solo se permiten correos @gmail.com, @outlook.com o @duoc.cl")
+        return v
 
 class LoginIn(BaseModel):
     email: EmailStr
